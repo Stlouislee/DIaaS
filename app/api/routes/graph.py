@@ -29,7 +29,7 @@ async def get_valid_dataset(
         raise HTTPException(status_code=404, detail="Graph Dataset not found")
     return dataset
 
-@router.post("/{session_id}/datasets/graph", response_model=GraphDatasetResponse)
+@router.post("/{session_id}/datasets/graph", response_model=GraphDatasetResponse, summary="Create Graph Dataset", description="Initialize a new empty graph dataset.")
 async def create_graph_dataset(
     session_id: str,
     dataset_in: GraphDatasetCreate,
@@ -49,7 +49,7 @@ async def create_graph_dataset(
     await db.refresh(new_dataset)
     return new_dataset
 
-@router.post("/{session_id}/datasets/graph/{dataset_id}/nodes")
+@router.post("/{session_id}/datasets/graph/{dataset_id}/nodes", summary="Create Node", description="Add a new node to the graph.")
 async def create_node(
     session_id: str,
     dataset_id: str,
@@ -62,7 +62,7 @@ async def create_node(
     service = GraphService(driver)
     return await service.create_node(dataset_id, node.label, node.properties)
 
-@router.post("/{session_id}/datasets/graph/{dataset_id}/edges")
+@router.post("/{session_id}/datasets/graph/{dataset_id}/edges", summary="Create Edge", description="Create a relationship between two nodes.")
 async def create_edge(
     session_id: str,
     dataset_id: str,
@@ -78,7 +78,7 @@ async def create_edge(
         raise HTTPException(status_code=400, detail="Could not create edge. Check node IDs.")
     return res
 
-@router.get("/{session_id}/datasets/graph/{dataset_id}/nodes")
+@router.get("/{session_id}/datasets/graph/{dataset_id}/nodes", summary="List Nodes", description="Retrieve nodes from the graph, optionally filtered by label.")
 async def list_nodes(
     session_id: str,
     dataset_id: str,
@@ -105,7 +105,7 @@ async def get_neighbors(
     service = GraphService(driver)
     return await service.get_neighbors(dataset_id, node_id)
 
-@router.post("/{session_id}/datasets/graph/{dataset_id}/algorithms/shortest_path")
+@router.post("/{session_id}/datasets/graph/{dataset_id}/algorithms/shortest_path", summary="Find Shortest Path", description="Calculate the shortest path between two nodes using Neo4j algorithms.")
 async def shortest_path(
     session_id: str,
     dataset_id: str,

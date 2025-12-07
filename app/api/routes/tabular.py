@@ -12,7 +12,7 @@ from typing import Optional, List
 
 router = APIRouter()
 
-@router.post("/{session_id}/datasets/tabular", response_model=TabularDatasetResponse)
+@router.post("/{session_id}/datasets/tabular", response_model=TabularDatasetResponse, summary="Create Tabular Dataset", description="Define a new tabular dataset with a specific schema.")
 async def create_tabular_dataset(
     session_id: str,
     dataset_in: TabularDatasetCreate,
@@ -44,7 +44,7 @@ async def create_tabular_dataset(
 
     return new_dataset
 
-@router.post("/{session_id}/datasets/tabular/{dataset_id}/records", status_code=201)
+@router.post("/{session_id}/datasets/tabular/{dataset_id}/records", status_code=201, summary="Insert Records", description="Insert multiple rows into a tabular dataset.")
 async def insert_records(
     session_id: str,
     dataset_id: str,
@@ -71,7 +71,7 @@ async def insert_records(
     
     return {"status": "success", "count": len(payload.rows)}
 
-@router.get("/{session_id}/datasets/tabular/{dataset_id}/records")
+@router.get("/{session_id}/datasets/tabular/{dataset_id}/records", summary="Query Records", description="Retrieve rows from a dataset with optional filtering and sorting.")
 async def query_records(
     session_id: str,
     dataset_id: str,

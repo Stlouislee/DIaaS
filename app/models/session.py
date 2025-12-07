@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime
+from sqlalchemy.orm import relationship
 from app.core.database import Base
 
 class Session(Base):
@@ -12,4 +13,5 @@ class Session(Base):
     description = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    # Future: Relationship to TabularDatasets and GraphDatasets
+    tabular_datasets = relationship("TabularDataset", backref="session", cascade="all, delete-orphan")
+    graph_datasets = relationship("GraphDataset", backref="session", cascade="all, delete-orphan")
