@@ -2,6 +2,16 @@
 
 A comprehensive Data Infrastructure as a Service that allows users to manage **Tabular** (PostgreSQL) and **Graph** (Neo4j) datasets within isolated **Sessions**.
 
+## 📋 Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Getting Started](#getting-started)
+- [Testing](#testing)
+- [Usage Guide](#usage-guide)
+- [Configuration](#configuration)
+- [Documentation](#documentation)
+
 ## Features
 
 - **Hybrid Storage**: Seamlessly manage structured tabular data and complex graph relationships.
@@ -25,6 +35,7 @@ A comprehensive Data Infrastructure as a Service that allows users to manage **T
 
 - Docker
 - Docker Compose
+- Python 3.11+ (for local development)
 
 ### Running the Service
 
@@ -39,6 +50,29 @@ A comprehensive Data Infrastructure as a Service that allows users to manage **T
     The API will be available at `http://localhost:8000`.
     -   API Documentation (Swagger UI): `http://localhost:8000/docs`
     -   Health Check: `http://localhost:8000/health`
+
+### Running Tests
+
+The project includes comprehensive test coverage with unit, integration, and end-to-end tests.
+
+```bash
+# Run all unit tests (fast)
+./test.sh unit
+
+# Run integration tests
+./test.sh integration
+
+# Run end-to-end tests (starts Docker automatically)
+./test.sh e2e
+
+# Run all tests
+./test.sh all
+
+# Generate coverage report
+./test.sh coverage
+```
+
+For detailed testing documentation, see [Testing Guide](README_TESTING.md).
 
 ### Port Configuration
 
@@ -118,6 +152,43 @@ Download all your data as a ZIP file.
 curl -H "X-API-Key: $API_KEY" -O -J http://localhost:8000/api/v1/sessions/{session_id}/export
 ```
 
+## Testing
+
+This project includes a comprehensive test suite with **59 tests** covering unit, integration, and end-to-end scenarios.
+
+### Quick Start
+
+```bash
+# Install test dependencies
+pip install -r requirements-dev.txt
+
+# Run all tests
+./run_tests.sh all
+
+# Run with coverage
+./run_tests.sh coverage
+```
+
+### Test Categories
+
+- **Unit Tests** (24 tests): Core logic, dependencies, security
+- **Integration Tests** (31 tests): API endpoints, database interactions
+- **E2E Tests** (4 tests): Complete workflows
+
+### Useful Commands
+
+```bash
+./run_tests.sh unit           # Fast unit tests only
+./run_tests.sh integration    # API integration tests
+./run_tests.sh e2e            # End-to-end workflows
+pytest -v -k "session"        # Run tests matching keyword
+```
+
+📚 **Documentation**:
+- [Quick Start Guide](TESTS_QUICKSTART.md) - Get started with testing
+- [Complete Testing Guide](TESTING.md) - Detailed documentation
+- [Test Summary](TEST_SUMMARY.md) - Full test coverage details
+
 ## Configuration
 
 Environment variables can be set in `docker-compose.yml` or a `.env` file.
@@ -125,3 +196,87 @@ Environment variables can be set in `docker-compose.yml` or a `.env` file.
 - `ALLOWED_KEYS`: JSON list of valid API keys (e.g., `["secret-key-1"]`). If empty (default), any key matching the format is accepted.
 - `POSTGRES_...`: Database credentials.
 - `NEO4J_...`: Graph database credentials.
+
+## Architecture
+
+### Dependency Injection Pattern
+
+The project uses FastAPI's dependency injection system for authorization and validation. All API endpoints leverage reusable dependency functions for:
+
+- Session ownership verification
+- Dataset access control
+- User authentication
+
+This approach provides:
+- **Code reusability**: Validation logic defined once, used everywhere
+- **Type safety**: Full IDE support and type checking
+- **Maintainability**: Single source of truth for authorization logic
+- **Testability**: Easy to mock dependencies in tests
+
+For details, see [Dependency Injection Pattern](docs/DEPENDENCY_INJECTION_PATTERN.md).
+
+## Testing
+
+The project includes a comprehensive three-tier testing strategy:
+
+- **Unit Tests** (27 tests): Fast, isolated component tests
+- **Integration Tests** (30+ tests): API endpoint testing with in-memory database
+- **End-to-End Tests** (15+ tests): Full workflow testing with Docker environment
+
+**Total: 72+ test cases**
+
+### Quick Test Commands
+
+```bash
+# Unit tests only (fastest ~0.3s)
+./test.sh unit
+
+# Integration tests (~0.8s)
+./test.sh integration
+
+# E2E tests with Docker (~90s)
+./test.sh e2e
+
+# All tests
+./test.sh all
+
+# With coverage report
+./test.sh coverage
+```
+
+See [Testing Guide](README_TESTING.md) for comprehensive documentation.
+
+## CI/CD
+
+The project uses GitHub Actions for continuous integration:
+- Runs unit tests on every push/PR
+- Runs E2E tests with full Docker environment
+- Configuration: `.github/workflows/test.yml`
+
+## Documentation
+
+### 📖 API & Usage
+- [README](README.md) - Main documentation
+- [Implementation Plan](implementation_plan.md) - Project architecture
+
+### 🧪 Testing
+- [Tests Quick Start](TESTS_QUICKSTART.md) - Get started with testing
+- [Testing Guide](TESTING.md) - Complete testing documentation
+- [Test Summary](TEST_SUMMARY.md) - Test coverage details
+
+### 🏗️ Architecture & Refactoring
+- [Dependency Injection Pattern](docs/DEPENDENCY_INJECTION_PATTERN.md) - Design pattern explained
+- [Before/After Comparison](docs/BEFORE_AFTER_COMPARISON.md) - Code improvements
+- [Refactoring Summary](REFACTORING_SUMMARY.md) - Recent improvements
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+1. All tests pass (`./run_tests.sh all`)
+2. New features include tests
+3. Code follows existing patterns
+4. Coverage doesn't decrease
+
+## License
+
+[Your License Here]

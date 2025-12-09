@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.dependencies import get_valid_session, get_valid_tabular_dataset
 from app.core.security import get_current_user_id
 from app.models.session import Session
 from app.models.tabular import TabularDataset
@@ -14,17 +14,12 @@ router = APIRouter()
 
 @router.post("/{session_id}/datasets/tabular", response_model=TabularDatasetResponse, summary="Create Tabular Dataset", description="Define a new tabular dataset with a specific schema.")
 async def create_tabular_dataset(
-    session_id: str,
     dataset_in: TabularDatasetCreate,
-    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_valid_session),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify Session
-    session = await db.get(Session, session_id)
-    if not session or session.user_id != user_id:
-        raise HTTPException(status_code=404, detail="Session not found")
-
     # Create Metadata
+    session_id = session.id
     new_dataset = TabularDataset(
         session_id=session_id,
         name=dataset_in.name
@@ -46,26 +41,13 @@ async def create_tabular_dataset(
 
 @router.post("/{session_id}/datasets/tabular/{dataset_id}/records", status_code=201, summary="Insert Records", description="Insert multiple rows into a tabular dataset.")
 async def insert_records(
-    session_id: str,
-    dataset_id: str,
     payload: RowInsert,
-    user_id: str = Depends(get_current_user_id),
+    dataset: TabularDataset = Depends(get_valid_tabular_dataset),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify Access
-    result = await db.execute(select(TabularDataset).where(TabularDataset.id == dataset_id, TabularDataset.session_id == session_id))
-    dataset = result.scalar_one_or_none()
-    if not dataset: # Need to check session user_id actually, but assuming session paths are correct
-        # Strict check:
-        sess = await db.get(Session, session_id)
-        if not sess or sess.user_id != user_id:
-             raise HTTPException(status_code=404, detail="Session not found")
-        if not dataset:
-             raise HTTPException(status_code=404, detail="Dataset not found")
-
     service = TabularService(db)
     try:
-        await service.insert_rows(dataset_id, payload.rows)
+        await service.insert_rows(dataset.id, payload.rows)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     
@@ -73,27 +55,20 @@ async def insert_records(
 
 @router.get("/{session_id}/datasets/tabular/{dataset_id}/records", summary="Query Records", description="Retrieve rows from a dataset with optional filtering and sorting.")
 async def query_records(
-    session_id: str,
-    dataset_id: str,
     limit: int = 100,
     offset: int = 0,
     sort: Optional[str] = None,
     select: Optional[str] = None,
-    user_id: str = Depends(get_current_user_id),
+    dataset: TabularDataset = Depends(get_valid_tabular_dataset),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify (Simplified for brevity, ideally middleware or dependency does this)
-    sess = await db.get(Session, session_id)
-    if not sess or sess.user_id != user_id:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
     service = TabularService(db)
     select_cols = select.split(",") if select else None
     
     # Parsing params for filters could be added here iterating request.query_params
     
     try:
-        rows = await service.query_rows(dataset_id, limit, offset, sort=sort, select_cols=select_cols)
+        rows = await service.query_rows(dataset.id, limit, offset, sort=sort, select_cols=select_cols)
         return {"data": rows, "count": len(rows)}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

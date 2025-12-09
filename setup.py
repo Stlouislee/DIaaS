@@ -1,0 +1,29 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="diaas",
+    version="0.1.0",
+    packages=find_packages(),
+    install_requires=[
+        "fastapi>=0.111.0",
+        "uvicorn[standard]>=0.30.0",
+        "sqlalchemy>=2.0.30",
+        "asyncpg>=0.29.0",
+        "neo4j>=5.20.0",
+        "pydantic>=2.7.0",
+        "pydantic-settings>=2.2.0",
+        "python-multipart>=0.0.9",
+        "requests>=2.31.0",
+        "pandas>=2.2.0",
+        "networkx>=3.3",
+    ],
+    extras_require={
+        "test": [
+            "pytest>=7.4.0",
+            "pytest-asyncio>=0.21.0",
+            "pytest-cov>=4.1.0",
+            "pytest-env>=0.8.0",
+            "httpx>=0.24.0",
+        ],
+    },
+)
