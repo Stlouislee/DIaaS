@@ -29,6 +29,12 @@ async def create_session(
     db.add(new_session)
     await db.commit()
     await db.refresh(new_session)
+    
+    # Re-fetch with eager loading to satisfy Pydantic response model
+    query = select(Session).options(selectinload(Session.tabular_datasets), selectinload(Session.graph_datasets)).where(Session.id == new_session.id)
+    result = await db.execute(query)
+    new_session = result.scalar_one()
+
     return new_session
 
 @router.get("/", response_model=List[SessionResponse], summary="List all Sessions", description="Retrieve all sessions owned by the current user.")
