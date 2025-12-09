@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.core.database import get_db
+from app.core.dependencies import get_valid_session
 from app.core.neo4j_db import get_neo4j_driver
 from app.core.security import get_current_user_id
 from app.models.session import Session
@@ -16,20 +17,14 @@ router = APIRouter()
 
 @router.get("/{session_id}/export")
 async def export_session(
-    session_id: str,
-    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_valid_session),
     db: AsyncSession = Depends(get_db),
     driver = Depends(get_neo4j_driver)
 ):
-    # Verify Session
-    sess = await db.get(Session, session_id)
-    if not sess or sess.user_id != user_id:
-        raise HTTPException(status_code=404, detail="Session not found")
-
     files = {}
 
     # 1. Export Tabular Datasets
-    result = await db.execute(select(TabularDataset).where(TabularDataset.session_id == session_id))
+    result = await db.execute(select(TabularDataset).where(TabularDataset.session_id == session.id))
     tabular_datasets = result.scalars().all()
     
     t_service = TabularService(db)
@@ -40,7 +35,7 @@ async def export_session(
 
     # 2. Export Graph Datasets
     # Getting all graph data is heavy. We will dump nodes and relations as JSON.
-    result = await db.execute(select(GraphDataset).where(GraphDataset.session_id == session_id))
+    result = await db.execute(select(GraphDataset).where(GraphDataset.session_id == session.id))
     graph_datasets = result.scalars().all()
     
     g_service = GraphService(driver)
@@ -57,5 +52,5 @@ async def export_session(
     return Response(
         content=zip_bytes, 
         media_type="application/zip", 
-        headers={"Content-Disposition": f"attachment; filename=session_{session_id}.zip"}
+        headers={"Content-Disposition": f"attachment; filename=session_{session.id}.zip"}
     )

@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 from pydantic import BaseModel
 
 from app.core.database import get_db
+from app.core.dependencies import get_valid_session
 from app.core.neo4j_db import get_neo4j_driver
 from app.core.security import get_current_user_id
 from app.models.session import Session
@@ -18,17 +19,11 @@ class QueryRequest(BaseModel):
 
 @router.post("/{session_id}/query")
 async def execute_query(
-    session_id: str,
     request: QueryRequest,
-    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_valid_session),
     db: AsyncSession = Depends(get_db),
     driver = Depends(get_neo4j_driver)
 ):
-    # Verify Session
-    sess = await db.get(Session, session_id)
-    if not sess or sess.user_id != user_id:
-        raise HTTPException(status_code=404, detail="Session not found")
-
     if request.type.lower() == "sql":
         try:
             # Execute raw SQL

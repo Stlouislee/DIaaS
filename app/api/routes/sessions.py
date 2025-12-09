@@ -5,6 +5,7 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import selectinload
 
 from app.core.database import get_db, init_db
+from app.core.dependencies import get_valid_session
 from app.core.security import get_current_user_id
 from app.models.session import Session
 from app.models.schemas import SessionCreate, SessionResponse
@@ -48,29 +49,22 @@ async def list_sessions(
 
 @router.get("/{session_id}", response_model=SessionResponse, summary="Get Session Details", description="Retrieve details of a specific session.")
 async def get_session(
-    session_id: str,
-    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_valid_session),
     db: AsyncSession = Depends(get_db)
 ):
-    query = select(Session).options(selectinload(Session.tabular_datasets), selectinload(Session.graph_datasets)).where(Session.id == session_id, Session.user_id == user_id)
+    # Re-fetch with eager loading to satisfy Pydantic response model
+    query = select(Session).options(
+        selectinload(Session.tabular_datasets), 
+        selectinload(Session.graph_datasets)
+    ).where(Session.id == session.id)
     result = await db.execute(query)
-    session = result.scalar_one_or_none()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return session
+    session_with_datasets = result.scalar_one()
+    return session_with_datasets
 
 @router.delete("/{session_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete Session", description="Permanently delete a session and all its associated data.")
 async def delete_session(
-    session_id: str,
-    user_id: str = Depends(get_current_user_id),
+    session: Session = Depends(get_valid_session),
     db: AsyncSession = Depends(get_db)
 ):
-    # Verify existence and ownership
-    query = select(Session).where(Session.id == session_id, Session.user_id == user_id)
-    result = await db.execute(query)
-    session = result.scalar_one_or_none()
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    
     await db.delete(session)
     await db.commit()
